@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ImportMFP.Classes;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -10,6 +11,9 @@ namespace ImportMFP
     {
         static void Main(string[] args)
         {
+            MFPWeightData weightData = Importer.ImportFromFile("data.csv");
+
+            new Exporter().Export(weightData);
         }
     }
 }
