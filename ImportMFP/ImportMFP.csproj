@@ -49,6 +49,9 @@
     <Compile Include="Classes\Exporter.cs" />
     <Compile Include="Classes\Importer.cs" />
     <Compile Include="Classes\MFPWeightData.cs" />
+    <Compile Include="Classes\REST\KeyValuePairSerializer.cs" />
+    <Compile Include="Classes\REST\RequestAuthTokenResponse.cs" />
+    <Compile Include="Classes\REST\RequestTokenResponse.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
