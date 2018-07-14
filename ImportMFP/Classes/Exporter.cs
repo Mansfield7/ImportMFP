@@ -23,7 +23,55 @@ namespace ImportMFP.Classes
         
         private const string REQUEST_ACCESS_TOKEN_URL = "http://www.fatsecret.com/oauth/access_token";
 
+        private const string SERVER_API_URL = "http://platform.fatsecret.com/rest/server.api";
+
         public void Export(MFPWeightData weightData)
+        {
+            //DoAuthStuff();
+
+            string token = "b70eba355e344b36957749d70f4dc7f8";
+            string token_secret = "718b836cb6f446349de85d031cbb3572";
+
+            RestClient updateWeightClient = new RestClient(SERVER_API_URL);
+
+            RestRequest request = new RestRequest(string.Empty, Method.POST);
+
+            string nonce = string.Empty;
+            string timestamp = string.Empty;
+
+            timestamp = ((int)(DateTime.UtcNow - new DateTime(1970, 1, 1)).TotalSeconds).ToString();
+            nonce = System.Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(timestamp + timestamp + timestamp));
+
+            request.AddParameter("oauth_consumer_key", REST_API_CONSUMER_KEY);
+            request.AddParameter("oauth_signature_method", "HMAC-SHA1");
+            request.AddParameter("oauth_timestamp", timestamp);
+            request.AddParameter("oauth_nonce", nonce);
+            request.AddParameter("oauth_version", "1.0");
+            request.AddParameter("method", "weight.update");
+            request.AddParameter("oauth_token", token);
+            request.AddParameter("current_weight_kg", 100.0);
+
+            request.AddParameter("format", "json");
+            request.AddParameter("date", TransformDate(DateTime.Now.AddMonths(-1)));
+            request.AddParameter("weight_type", "lb");
+            //request.AddParameter("comment", "imported through API from MFP"); //this causes an issue with signature, I think spaces are being encoded incorrectly
+
+            request = SignRequest(request, updateWeightClient.BaseUrl.ToString(), token_secret);
+
+            IRestResponse<RequestTokenResponse> response = updateWeightClient.Execute<RequestTokenResponse>(request);
+
+            if (response.StatusCode == System.Net.HttpStatusCode.OK)
+            {
+
+            }
+        }
+
+        private int TransformDate(DateTime input)
+        {
+            return Convert.ToInt32((input - new DateTime(1970, 1, 1)).TotalDays);
+        }
+
+        private void DoAuthStuff()
         {
             RestClient requestTokenClient = new RestClient(REQUEST_TOKEN_URL);
             requestTokenClient.AddHandler("text/html", KeyValuePairSerializer.Default);
@@ -47,12 +95,13 @@ namespace ImportMFP.Classes
             request.OnBeforeDeserialization = resp => { resp.ContentType = "text/html"; };
 
             IRestResponse<RequestTokenResponse> response = requestTokenClient.Execute<RequestTokenResponse>(request);
-            
+
             if (response.StatusCode == System.Net.HttpStatusCode.OK)
             {
                 string user_code = string.Empty;
 
                 RestClient requestAccessTokenClient = new RestClient(REQUEST_ACCESS_TOKEN_URL);
+                requestAccessTokenClient.AddHandler("text/html", KeyValuePairSerializer.Default);
 
                 RestRequest request2 = new RestRequest(string.Empty, Method.GET);
 
@@ -66,16 +115,17 @@ namespace ImportMFP.Classes
                 request2.AddParameter("oauth_timestamp", timestamp);
                 request2.AddParameter("oauth_nonce", nonce);
                 request2.AddParameter("oauth_version", "1.0");
-                request2.AddParameter("oauth_callback", "oob");
 
-                request2 = SignRequest(request, requestAccessTokenClient.BaseUrl.ToString(), response.Data.oauth_token_secret);
+                request2 = SignRequest(request2, requestAccessTokenClient.BaseUrl.ToString(), response.Data.oauth_token_secret);
                 request2.OnBeforeDeserialization = resp => { resp.ContentType = "text/html"; };
 
-                IRestResponse<RequestTokenResponse> response2 = requestAccessTokenClient.Execute<RequestTokenResponse>(request);
+                IRestResponse<RequestTokenResponse> response2 = requestAccessTokenClient.Execute<RequestTokenResponse>(request2);
 
                 if (response2.StatusCode == System.Net.HttpStatusCode.OK)
                 {
                     //todo - oauth_token and oauth_token_secret from this request can be used to make real API calls - all code above should be single-use 
+                    //token = "b70eba355e344b36957749d70f4dc7f8"
+                    //token_secret = "718b836cb6f446349de85d031cbb3572"
                 }
                 else
                 {
@@ -85,7 +135,7 @@ namespace ImportMFP.Classes
             else
             {
                 throw new Exception("Invalid status code from request token: " + response.StatusCode.ToString());
-            }            
+            }
         }
 
         /// <summary>
