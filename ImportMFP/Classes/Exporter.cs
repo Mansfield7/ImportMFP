@@ -54,7 +54,7 @@ namespace ImportMFP.Classes
             request.AddParameter("format", "json");
             request.AddParameter("date", TransformDate(DateTime.Now.AddMonths(-1)));
             request.AddParameter("weight_type", "lb");
-            //request.AddParameter("comment", "imported through API from MFP"); //this causes an issue with signature, I think spaces are being encoded incorrectly
+            //request.AddParameter("comment", "imported through API from MFP"); //this causes an issue with signature, I think spaces are being encoded incorrectlywalle
 
             request = SignRequest(request, updateWeightClient.BaseUrl.ToString(), token_secret);
 
